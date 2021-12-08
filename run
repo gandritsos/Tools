@@ -1,0 +1,124 @@
+# Importing User roles and System roles from dedicated files. – Review them first.
+
+$jsonFileContent = Get-Content -Path C:\Temp\SCOM-Scripts\RunAsAccounts.json | ConvertFrom-Json
+
+
+
+foreach($rAccount in $jsonFileContent) {
+
+
+
+
+    $theName  = $rAccount.Name   
+
+    if ($theName -match 'Data Warehouse') {
+
+        write-warning "Skipping default account $theName"
+
+        continue
+
+    }
+
+    switch ($rAccount.AccountType) {
+
+        'SCOMCommunityStringSecureData' {                       
+
+            $credFile =  Get-Content -Path "C:\Temp\SCOM-Scripts\creds\$theName.txt"
+
+            $secPass  = ConvertTo-SecureString $credFile -AsPlainText -Force
+
+            Add-SCOMRunAsAccount -CommunityString -Name $theName -Description $rAccount.Description -String $secPass
+
+        }
+
+        'SCXMonitorRunAsAccount' {
+
+            try{               
+
+                $thePass = Get-Content -Path "C:\Temp\SCOM-Scripts\creds\$theName.txt"
+
+                $secPass = ConvertTo-SecureString $thePass -AsPlainText -Force
+
+                $theCreds = New-Object -TypeName System.Management.Automation.PSCredential($theName,$secPass)               
+
+                Add-SCOMRunAsAccount -SCXMonitoring -Name $theName -Description $rAccount.Description -RunAsCredential $theCreds -Sudo              
+
+            } catch {           
+
+                Write-Warning $_                            
+
+            }           
+
+        }
+
+        'SCXMaintenanceRunAsAccount' {
+
+            try{               
+
+                $thePass = Get-Content -Path "C:\Temp\SCOM-Scripts\creds\$theName.txt"
+
+                $secPass = ConvertTo-SecureString $thePass -AsPlainText -Force
+
+                $theCreds = New-Object -TypeName System.Management.Automation.PSCredential($theName,$secPass)               
+
+                Add-SCOMRunAsAccount -SCXMaintenance -Name $theName -Description $rAccount.Description -RunAsCredential $theCreds -Sudo               
+
+            } catch {
+
+                Write-Warning $_                            
+
+            }           
+
+        }
+
+        'SCOMBasicCredentialSecureData' {
+
+            try{              
+
+                $thePass = Get-Content -Path "C:\Temp\SCOM-Scripts\creds\$theName.txt"
+
+                $secPass = ConvertTo-SecureString $thePass -AsPlainText -Force
+
+                $theCreds = New-Object -TypeName System.Management.Automation.PSCredential($theName,$secPass)                
+
+                Add-SCOMRunAsAccount -Basic -Name $theName -Description $rAccount.Description -RunAsCredential $theCreds                
+
+            } catch {
+
+                Write-Warning $_                            
+
+            }           
+
+        }
+
+        'SCOMWindowsCredentialSecureData' {
+
+            try{               
+
+                $thePass = Get-Content -Path "C:\Temp\SCOM-Scripts\creds\$theName.txt"
+
+                $secPass = ConvertTo-SecureString $thePass -AsPlainText -Force
+
+                $theName  = $env:USERDOMAIN + '\' + $rAccount.Name
+
+                $theCreds = New-Object -TypeName System.Management.Automation.PSCredential($theName,$secPass)                
+
+                Add-SCOMRunAsAccount -Windows -Name $theName -Description $rAccount.Description -RunAsCredential $theCreds                
+
+            } catch {
+
+                Write-Warning $_                            
+
+            }           
+
+        }
+
+        default {
+
+            Write-Warning "Not coverd: $rAccount.AccountType please add manually."
+
+        }
+
+    }
+
+}
