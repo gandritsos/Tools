@@ -1,0 +1,54 @@
+# Importing User roles and System roles from dedicated files. – Review them first.
+
+$jsonFileContent = Get-Content -Path C:\Temp\SCOM-Scripts\UserRoles.json | ConvertFrom-Json
+
+foreach ($uRole in $jsonFileContent) {
+
+    switch ($uRole.ProfileDisplayName) {       
+
+        'Advanced Operator' {
+
+            Add-SCOMUserRole -Name $uRole.Name -DisplayName $uRole.Name -Users $uRole.Users -AdvancedOperator           
+
+        }       
+
+        'Author' {
+
+            Add-SCOMUserRole -Name $uRole.Name -DisplayName $uRole.Name -Users $uRole.Users -Author
+
+        }
+
+        'Operator' {
+
+            Add-SCOMUserRole -Name $uRole.Name -DisplayName $uRole.Name -Users $uRole.Users -Operator
+
+        }
+
+        'Read-Only Operator' {
+
+            Add-SCOMUserRole -Name $uRole.Name -DisplayName $uRole.Name -Users $uRole.Users -ReadOnlyOperator
+
+        }       
+
+    }       
+
+}
+
+
+
+
+$jsonFileContent = Get-Content -Path C:\Temp\SCOM-Scripts\SystemUserRoles.json | ConvertFrom-Json
+
+foreach ($sRole in $jsonFileContent) {
+
+    if ($sRole.Users) {   
+
+        Get-SCOMUserRole | Where-Object {$_.Name -eq $sRole.Name} | Set-SCOMUserRole -User $sRole.Users
+
+    } else {
+
+        continue
+
+    }    
+
+}
