@@ -1,0 +1,35 @@
+Get-SCOMRunAsAccount | Select-Object -ExpandProperty Name | ForEach-Object {
+
+    try {  
+
+        $theName  = $_
+
+        $theTmp  = Get-RunAsCredential -Name $theName
+
+        $thePass = ($theTmp.Password).ToString()
+
+        $thePass
+
+
+
+
+        $secPass  = ConvertTo-SecureString $thePass -AsPlainText -Force
+
+        $theCreds = New-Object -TypeName System.Management.Automation.PSCredential($theName,$secPass)
+
+
+
+
+        $theCreds | Export-Clixml -Path "C:\temp\SCOMExport\$theName.cred"
+
+        $fileName =  "C:\temp\SCOMExport\" + $theName + ".txt"
+
+        "$($thePass)" | Out-File -FilePath $fileName
+
+    } catch {
+
+        $info = 'Swallowing exception'
+
+    }
+
+}
